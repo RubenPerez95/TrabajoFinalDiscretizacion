@@ -46,81 +46,84 @@ int main(int argc, char**argv) {
     tiempoInicioSerial = omp_get_wtime();
     //Bucle serial
     for (i = 0; i<edades; i++) {
-            if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
-                vectorSerialSalidaIntervalo[i] = INFANTES;
-            }
-            else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
-                vectorSerialSalidaIntervalo[i] = JOVENES;
-            }
-            else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
-                vectorSerialSalidaIntervalo[i] = ADULTOS;
-            }
-            else {
-                vectorSerialSalidaIntervalo[i] = MAYORES;
-            }
+        if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
+            vectorSerialSalidaIntervalo[i] = INFANTES;
+        }
+        else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
+            vectorSerialSalidaIntervalo[i] = JOVENES;
+        }
+        else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
+            vectorSerialSalidaIntervalo[i] = ADULTOS;
+        }
+        else {
+            vectorSerialSalidaIntervalo[i] = MAYORES;
+        }
     }
     tiempoSerial = (omp_get_wtime() - tiempoInicioSerial) * 1000000;
 
     tiempoInicioSerialSuma = omp_get_wtime();
     //Bucle serial
     for (i = 0; i<edades; i++) {
-            if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
-                totalRangosSerial[0] = totalRangosSerial[0] + 1;
-            }
-            else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
-                totalRangosSerial[1] = totalRangosSerial[1] + 1;
-            }
-            else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
-                totalRangosSerial[2] = totalRangosSerial[2] + 1;
-            }
-            else {
-                totalRangosSerial[3] = totalRangosSerial[3] + 1;
-            }
+        if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
+            totalRangosSerial[0]++;
+        }
+        else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
+            totalRangosSerial[1]++;
+        }
+        else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
+            totalRangosSerial[2]++;
+        }
+        else {
+            totalRangosSerial[3]++;
+        }
     }
     tiempoSerialSuma = (omp_get_wtime() - tiempoInicioSerialSuma) * 1000000;
 
 
-
-    //Por defecto debería coger 4 siempre. Por si acaso.
     omp_set_num_threads(4);
 
     //Probar los chunks
     tiempoInicioPar = omp_get_wtime();
     //Bucle paralelizado
-    #pragma omp parallel for shared(vectorParaleloSalidaIntervalo) private(i) schedule(dynamic, 100)
-    for (i = 0; i<edades; i++) {
-            if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
-                vectorParaleloSalidaIntervalo[i] = INFANTES;
-            }
-            else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
-                vectorParaleloSalidaIntervalo[i] = JOVENES;
-            }
-            else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
-                vectorParaleloSalidaIntervalo[i] = ADULTOS;
-            }
-            else {
-                vectorParaleloSalidaIntervalo[i] = MAYORES;
-            }
+	//#pragma omp for ordered //Prueba 1
+    //#pragma omp parallel for shared(edades, vectorParaleloSalidaIntervalo, vectorEdades) private(i) //Prueba 2
+	#pragma omp for // Prueba 3
+	for (i = 0; i<edades; i++) {
+		if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
+			vectorParaleloSalidaIntervalo[i] = INFANTES;
+		}
+		else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
+			vectorParaleloSalidaIntervalo[i] = JOVENES;
+		}
+		else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
+			vectorParaleloSalidaIntervalo[i] = ADULTOS;
+		}
+		else {
+			vectorParaleloSalidaIntervalo[i] = MAYORES;
+		}
 
-    }
+	}
     tiempoPar = (omp_get_wtime() - tiempoInicioPar) * 1000000;
 
     tiempoInicioParSuma = omp_get_wtime();
     //Bucle paralelizado
-    #pragma omp parallel for private(i) reduction(+:totalRangosParalelo)
+	//#pragma omp for ordered //Prueba 1
+	//#pragma omp parallel for default(none) shared(edades, vectorEdades, totalRangosParalelo) schedule(static) //Prueba2
+    //#pragma omp parallel for shared(edades, vectorEdades) private(i) reduction(+:totalRangosParalelo) //Prueba 3
+	#pragma omp for //Prueba 4
     for (i = 0; i<edades; i++) {
-            if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
-                totalRangosParalelo[0] = totalRangosParalelo[0] + 1;
-            }
-            else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
-                totalRangosParalelo[1] = totalRangosParalelo[1] + 1;
-            }
-            else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
-                totalRangosParalelo[2] = totalRangosParalelo[2] + 1;
-            }
-            else {
-                totalRangosParalelo[3] = totalRangosParalelo[3] + 1;
-            }
+        if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
+            totalRangosParalelo[0]++;
+        }
+        else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
+            totalRangosParalelo[1]++;
+        }
+        else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
+            totalRangosParalelo[2]++;
+        }
+        else {
+            totalRangosParalelo[3]++;
+        }
 
     }
     tiempoParSuma = (omp_get_wtime() - tiempoInicioParSuma) * 1000000;
