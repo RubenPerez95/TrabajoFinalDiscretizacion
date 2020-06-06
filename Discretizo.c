@@ -6,7 +6,6 @@
 // CONSTANTES
 
 #define TAM 100000
-#define EDADES 90000
 #define VALORES 50
 #define INFANTES 73 //Código ASCII para la letra I para referirse a personas menores de 15 años
 #define JOVENES 74 //Código ASCII para la letra J para referirse a personas mayores de 14 años y menores de 25
@@ -17,81 +16,114 @@ void imprimirVector(int vector[]);
 void imprimirRangos(int vector[]);
 void compararVectores(int vector1[], int vector2[]);
 pid_t getpid(void);
-//pid_t getppid(void);
 
 int main(int argc, char**argv) {
-    
+
     int vectorEdades[TAM]; //Se inicializa el vector de edades con un tamaño de 30
     int vectorSerialSalidaIntervalo[TAM]; //vector destinado a la disposición de los intervalos a los que pertenece cada edad para la parte serial
     int vectorParaleloSalidaIntervalo[TAM]; //vector destinado a la disposición de los intervalos a los que pertenece cada edad para la parte paralelizada
     int totalRangosSerial[4]; //Guarda el numero de personas que pertenecen a cada rango de edad para el código secuencial
     int totalRangosParalelo[4]; //Guarda el numero de personas que pertenecen a cada rango de edad para el código paralelo
+    int edades = 90000;
+    int i = 0;
 
-    float tiempoInicioPar, tiempoInicioSerial, tiempoPar, tiempoSerial;
+    float tiempoInicioPar, tiempoInicioParSuma, tiempoInicioSerial, tiempoInicioSerialSuma, tiempoPar, tiempoParSuma, tiempoSerial, tiempoSerialSuma;
 
     srand(getpid()); //Necesario para que cada vez que se ejecute, se obtengan valores aleatorios diferentes
 
-    for (int i=0; i<EDADES; i++) {
+    for (i=0; i<edades; i++) {
         vectorEdades[i] = rand()% 95 + 1;
     }
 
     printf("Primeros 50 valores aleatorios del vector de edades: \n");
     //Se generan los valores aleatorios y se insertan en el vector de edades
     //Estudiar los tiempos al generar los valores aleatorios y ver si lo mejor es paralelizar el bucle
-    for (int i = 0; i<VALORES; i++) {
+    for (i = 0; i<VALORES; i++) {
         printf("Posición %d(%d) ", i, vectorEdades[i]);
     }
     printf("\n\n");
 
-    //Por defecto debería coger 4 siempre. Por si acaso.
-    omp_set_num_threads(4);
-
     tiempoInicioSerial = omp_get_wtime();
     //Bucle serial
-    for (int i = 0; i<EDADES; i++) {
+    for (i = 0; i<edades; i++) {
             if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
                 vectorSerialSalidaIntervalo[i] = INFANTES;
-                totalRangosSerial[0] = totalRangosSerial[0] + 1;
             }
             else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
                 vectorSerialSalidaIntervalo[i] = JOVENES;
-                totalRangosSerial[1] = totalRangosSerial[1] + 1;
             }
             else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
                 vectorSerialSalidaIntervalo[i] = ADULTOS;
-                totalRangosSerial[2] = totalRangosSerial[2] + 1;
             }
             else {
                 vectorSerialSalidaIntervalo[i] = MAYORES;
-                totalRangosSerial[3] = totalRangosSerial[3] + 1;
             }
     }
     tiempoSerial = (omp_get_wtime() - tiempoInicioSerial) * 1000000;
 
+    tiempoInicioSerialSuma = omp_get_wtime();
+    //Bucle serial
+    for (i = 0; i<edades; i++) {
+            if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
+                totalRangosSerial[0] = totalRangosSerial[0] + 1;
+            }
+            else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
+                totalRangosSerial[1] = totalRangosSerial[1] + 1;
+            }
+            else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
+                totalRangosSerial[2] = totalRangosSerial[2] + 1;
+            }
+            else {
+                totalRangosSerial[3] = totalRangosSerial[3] + 1;
+            }
+    }
+    tiempoSerialSuma = (omp_get_wtime() - tiempoInicioSerialSuma) * 1000000;
 
+
+
+    //Por defecto debería coger 4 siempre. Por si acaso.
+    omp_set_num_threads(4);
+
+    //Probar los chunks
     tiempoInicioPar = omp_get_wtime();
     //Bucle paralelizado
-    #pragma omp paralel for shared(vectorEdades, EDADES, vectorParaleloSalidaIntervalo) private(i) schedule(dynamic)
-    for (int i = 0; i<EDADES; i++) {
+    #pragma omp parallel for shared(vectorParaleloSalidaIntervalo) private(i) schedule(dynamic, 100)
+    for (i = 0; i<edades; i++) {
             if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
                 vectorParaleloSalidaIntervalo[i] = INFANTES;
-                totalRangosParalelo[0] = totalRangosParalelo[0] + 1;
             }
             else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
                 vectorParaleloSalidaIntervalo[i] = JOVENES;
-                totalRangosParalelo[1] = totalRangosParalelo[1] + 1;
             }
             else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
                 vectorParaleloSalidaIntervalo[i] = ADULTOS;
-                totalRangosParalelo[2] = totalRangosParalelo[2] + 1;
             }
             else {
                 vectorParaleloSalidaIntervalo[i] = MAYORES;
-                totalRangosParalelo[3] = totalRangosParalelo[3] + 1;
             }
 
     }
     tiempoPar = (omp_get_wtime() - tiempoInicioPar) * 1000000;
+
+    tiempoInicioParSuma = omp_get_wtime();
+    //Bucle paralelizado
+    #pragma omp parallel for private(i) reduction(+:totalRangosParalelo)
+    for (i = 0; i<edades; i++) {
+            if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
+                totalRangosParalelo[0] = totalRangosParalelo[0] + 1;
+            }
+            else if(vectorEdades[i] >= 15 && vectorEdades[i] <= 24) {
+                totalRangosParalelo[1] = totalRangosParalelo[1] + 1;
+            }
+            else if(vectorEdades[i] >= 25 && vectorEdades[i] <= 64) {
+                totalRangosParalelo[2] = totalRangosParalelo[2] + 1;
+            }
+            else {
+                totalRangosParalelo[3] = totalRangosParalelo[3] + 1;
+            }
+
+    }
+    tiempoParSuma = (omp_get_wtime() - tiempoInicioParSuma) * 1000000;
 
     printf("Resultado de los 50 primeros valores la ejecución secuencial del vector:\n");
     imprimirVector(vectorSerialSalidaIntervalo);
@@ -99,6 +131,8 @@ int main(int argc, char**argv) {
     imprimirVector(vectorParaleloSalidaIntervalo);
     printf("Tiempo ejecución secuencial: %0.5f microsegundos \n", tiempoSerial);
     printf("Tiempo ejecución paralelizado: %0.5f microsegundos \n\n", tiempoPar);
+    printf("Tiempo ejecución secuencial suma: %0.5f microsegundos \n", tiempoSerialSuma);
+    printf("Tiempo ejecución paralelizado suma: %0.5f microsegundos \n\n", tiempoParSuma);
     printf("Resultados totales del vector secuencial:\n");
     imprimirRangos(totalRangosSerial);
     printf("Resultados totales del vector paralelo:\n");
@@ -122,7 +156,8 @@ void imprimirRangos(int *vector) {
 
 void compararVectores(int *vector1, int *vector2) {
     int orden = 0;
-    for (int i=0; i<EDADES; i++)
+    int edades = 90000;
+    for (int i=0; i<edades; i++)
         if (vector1[i] != vector2[i])
             orden = 1;
     if (orden == 1)
@@ -132,6 +167,3 @@ void compararVectores(int *vector1, int *vector2) {
 
     printf("\n\n");
 }
-
-
-
