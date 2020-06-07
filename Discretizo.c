@@ -24,10 +24,20 @@ int main(int argc, char**argv) {
     int vectorParaleloSalidaIntervalo[TAM]; //vector destinado a la disposición de los intervalos a los que pertenece cada edad para la parte paralelizada
     int totalRangosSerial[4]; //Guarda el numero de personas que pertenecen a cada rango de edad para el código secuencial
     int totalRangosParalelo[4]; //Guarda el numero de personas que pertenecen a cada rango de edad para el código paralelo
-    int edades = 90000;
+    int* V = 0;
     int i = 0;
 
     float tiempoInicioPar, tiempoInicioParSuma, tiempoInicioSerial, tiempoInicioSerialSuma, tiempoPar, tiempoParSuma, tiempoSerial, tiempoSerialSuma;
+
+
+    if (argc != 2) {
+        fprintf(stderr, "Se debe introducir el tamaño deseado del vector");
+        return 1;
+    }
+    else {
+        n = atoi(argv[1]); 
+        V = malloc(n * sizeof(int));
+    }
 
     srand(getpid()); //Necesario para que cada vez que se ejecute, se obtengan valores aleatorios diferentes
 
