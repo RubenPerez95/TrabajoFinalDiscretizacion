@@ -108,7 +108,7 @@ int main(int argc, char**argv) {
     tiempoInicioPar = omp_get_wtime();
     //Bucle paralelizado posiciones
 	//#pragma omp for ordered //Prueba 1
-    //#pragma omp parallel for shared(edades, vectorParaleloSalidaIntervalo, vectorEdades) private(i) //Prueba 2
+	//#pragma omp parallel for shared(edades, vectorParaleloSalidaIntervalo, vectorEdades) private(i) //Prueba 2
 	#pragma omp for // Prueba 3
 	for (i = 0; i<n; i++) {
 		if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
@@ -131,7 +131,7 @@ int main(int argc, char**argv) {
     //Bucle paralelizado contador
 	//#pragma omp for ordered //Prueba 1
 	//#pragma omp parallel for default(none) shared(edades, vectorEdades, totalRangosParalelo) schedule(static) //Prueba2
-    //#pragma omp parallel for shared(edades, vectorEdades) private(i) reduction(+:totalRangosParalelo) //Prueba 3
+	//#pragma omp parallel for shared(edades, vectorEdades) private(i) reduction(+:totalRangosParalelo) //Prueba 3
 	#pragma omp for //Prueba 4
     for (i = 0; i<n; i++) {
         if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
