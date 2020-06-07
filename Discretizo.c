@@ -20,6 +20,7 @@ pid_t getpid(void);
 
 int main(int argc, char**argv) {
 
+    //Inicialización de variables
     int vectorEdades[TAM]; //Se inicializa el vector de edades con un tamaño de 30
     int vectorSerialSalidaIntervalo[TAM]; //vector destinado a la disposición de los intervalos a los que pertenece cada edad para la parte serial
     int vectorParaleloSalidaIntervalo[TAM]; //vector destinado a la disposición de los intervalos a los que pertenece cada edad para la parte paralelizada
@@ -31,7 +32,7 @@ int main(int argc, char**argv) {
 
     float tiempoInicioPar, tiempoInicioParSuma, tiempoInicioSerial, tiempoInicioSerialSuma, tiempoPar, tiempoParSuma, tiempoSerial, tiempoSerialSuma;
 
-
+    //Comprueba el número de argumentos que se pasan por línea de comandos. Asigna el número de tamaño del vector original de edades.
     if (argc != 2) {
         fprintf(stderr, "Como argumento, se debe introducir el tamaño deseado del vector\n");
         return 1;
@@ -55,7 +56,7 @@ int main(int argc, char**argv) {
     printf("\n\n");
 
     tiempoInicioSerial = omp_get_wtime();
-    //Bucle serial
+    //Bucle serial posiciones
     for (i = 0; i<n; i++) {
         if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
             vectorSerialSalidaIntervalo[i] = INFANTES;
@@ -73,7 +74,7 @@ int main(int argc, char**argv) {
     tiempoSerial = (omp_get_wtime() - tiempoInicioSerial) * 1000000;
 
     tiempoInicioSerialSuma = omp_get_wtime();
-    //Bucle serial
+    //Bucle serial contador
     for (i = 0; i<n; i++) {
         if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
             totalRangosSerial[0]++;
@@ -94,7 +95,7 @@ int main(int argc, char**argv) {
     omp_set_num_threads(4);
 
     tiempoInicioPar = omp_get_wtime();
-    //Bucle paralelizado
+    //Bucle paralelizado posiciones
 	//#pragma omp for ordered //Prueba 1
     //#pragma omp parallel for shared(edades, vectorParaleloSalidaIntervalo, vectorEdades) private(i) //Prueba 2
 	#pragma omp for // Prueba 3
@@ -116,7 +117,7 @@ int main(int argc, char**argv) {
     tiempoPar = (omp_get_wtime() - tiempoInicioPar) * 1000000;
 
     tiempoInicioParSuma = omp_get_wtime();
-    //Bucle paralelizado
+    //Bucle paralelizado contador
 	//#pragma omp for ordered //Prueba 1
 	//#pragma omp parallel for default(none) shared(edades, vectorEdades, totalRangosParalelo) schedule(static) //Prueba2
     //#pragma omp parallel for shared(edades, vectorEdades) private(i) reduction(+:totalRangosParalelo) //Prueba 3
@@ -153,6 +154,7 @@ int main(int argc, char**argv) {
     compararVectores(vectorSerialSalidaIntervalo, vectorParaleloSalidaIntervalo, n);
 }
 
+//Imprime el vector seleccionado
 void imprimirVector(int *vector, int n) {
     for (int i=0; i<n; i++) {
         printf("Posición %d(%c) ", i, vector[i]);
@@ -160,6 +162,7 @@ void imprimirVector(int *vector, int n) {
     printf("\n\n");
 }
 
+//Imprime el total de edades por rango almacenados en el vector
 void imprimirRangos(int *vector) {
     printf("Hay un total de %d infantes \n", vector[0]);
     printf("Hay un total de %d jóvenes \n", vector[1]);
@@ -167,6 +170,7 @@ void imprimirRangos(int *vector) {
     printf("Hay un total de %d mayores \n\n", vector[3]);
 }
 
+//Compara si los vectores generados son equivalentes
 void compararVectores(int *vector1, int *vector2, int n) {
     int orden = 0;
     for (int i=0; i<n; i++)
