@@ -2,19 +2,20 @@
 #include <stdlib.h>
 #include <time.h>
 #include <omp.h>
+#include <math.h>
+
 
 // CONSTANTES
 
 #define TAM 100000
-#define VALORES 50
 #define INFANTES 73 //Código ASCII para la letra I para referirse a personas menores de 15 años
 #define JOVENES 74 //Código ASCII para la letra J para referirse a personas mayores de 14 años y menores de 25
 #define ADULTOS 65 //Código ASCII para la letra A para referirse a personas mayores de 24 años y menores de 65
 #define MAYORES 77 //Código ASCII para la letra M para referirse a personas mayores de 64 años
 
-void imprimirVector(int vector[]);
+void imprimirVector(int vector[], int n);
 void imprimirRangos(int vector[]);
-void compararVectores(int vector1[], int vector2[]);
+void compararVectores(int vector1[], int vector2[], int n);
 pid_t getpid(void);
 
 int main(int argc, char**argv) {
@@ -26,12 +27,13 @@ int main(int argc, char**argv) {
     int totalRangosParalelo[4]; //Guarda el numero de personas que pertenecen a cada rango de edad para el código paralelo
     int* V = 0;
     int i = 0;
+    int n;
 
     float tiempoInicioPar, tiempoInicioParSuma, tiempoInicioSerial, tiempoInicioSerialSuma, tiempoPar, tiempoParSuma, tiempoSerial, tiempoSerialSuma;
 
 
     if (argc != 2) {
-        fprintf(stderr, "Se debe introducir el tamaño deseado del vector");
+        fprintf(stderr, "Como argumento, se debe introducir el tamaño deseado del vector\n");
         return 1;
     }
     else {
@@ -41,21 +43,20 @@ int main(int argc, char**argv) {
 
     srand(getpid()); //Necesario para que cada vez que se ejecute, se obtengan valores aleatorios diferentes
 
-    for (i=0; i<edades; i++) {
-        vectorEdades[i] = rand()% 95 + 1;
+    //Se generan los valores aleatorios y se insertan en el vector de edades
+    for (i=0; i<n; i++) {
+        vectorEdades[i] = rand()% 95 + 0;
     }
 
-    printf("Primeros 50 valores aleatorios del vector de edades: \n");
-    //Se generan los valores aleatorios y se insertan en el vector de edades
-    //Estudiar los tiempos al generar los valores aleatorios y ver si lo mejor es paralelizar el bucle
-    for (i = 0; i<VALORES; i++) {
+    printf("Valores generados para el vector de edades: \n");
+    for (i = 0; i<n; i++) {
         printf("Posición %d(%d) ", i, vectorEdades[i]);
     }
     printf("\n\n");
 
     tiempoInicioSerial = omp_get_wtime();
     //Bucle serial
-    for (i = 0; i<edades; i++) {
+    for (i = 0; i<n; i++) {
         if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
             vectorSerialSalidaIntervalo[i] = INFANTES;
         }
@@ -73,7 +74,7 @@ int main(int argc, char**argv) {
 
     tiempoInicioSerialSuma = omp_get_wtime();
     //Bucle serial
-    for (i = 0; i<edades; i++) {
+    for (i = 0; i<n; i++) {
         if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
             totalRangosSerial[0]++;
         }
@@ -92,13 +93,12 @@ int main(int argc, char**argv) {
 
     omp_set_num_threads(4);
 
-    //Probar los chunks
     tiempoInicioPar = omp_get_wtime();
     //Bucle paralelizado
 	//#pragma omp for ordered //Prueba 1
     //#pragma omp parallel for shared(edades, vectorParaleloSalidaIntervalo, vectorEdades) private(i) //Prueba 2
 	#pragma omp for // Prueba 3
-	for (i = 0; i<edades; i++) {
+	for (i = 0; i<n; i++) {
 		if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
 			vectorParaleloSalidaIntervalo[i] = INFANTES;
 		}
@@ -121,7 +121,7 @@ int main(int argc, char**argv) {
 	//#pragma omp parallel for default(none) shared(edades, vectorEdades, totalRangosParalelo) schedule(static) //Prueba2
     //#pragma omp parallel for shared(edades, vectorEdades) private(i) reduction(+:totalRangosParalelo) //Prueba 3
 	#pragma omp for //Prueba 4
-    for (i = 0; i<edades; i++) {
+    for (i = 0; i<n; i++) {
         if(vectorEdades[i] >= 0 && vectorEdades[i] <= 14) {
             totalRangosParalelo[0]++;
         }
@@ -138,23 +138,23 @@ int main(int argc, char**argv) {
     }
     tiempoParSuma = (omp_get_wtime() - tiempoInicioParSuma) * 1000000;
 
-    printf("Resultado de los 50 primeros valores la ejecución secuencial del vector:\n");
-    imprimirVector(vectorSerialSalidaIntervalo);
-    printf("Resultado de los 50 primeros valores la ejecución en paralelo del vector:\n");
-    imprimirVector(vectorParaleloSalidaIntervalo);
-    printf("Tiempo ejecución secuencial: %0.5f microsegundos \n", tiempoSerial);
-    printf("Tiempo ejecución paralelizado: %0.5f microsegundos \n\n", tiempoPar);
-    printf("Tiempo ejecución secuencial suma: %0.5f microsegundos \n", tiempoSerialSuma);
-    printf("Tiempo ejecución paralelizado suma: %0.5f microsegundos \n\n", tiempoParSuma);
+    printf("Resultado de la ejecución secuencial del vector:\n");
+    imprimirVector(vectorSerialSalidaIntervalo, n);
+    printf("Resultado de la ejecución en paralelo del vector:\n");
+    imprimirVector(vectorParaleloSalidaIntervalo, n);
+    printf("Tiempo ejecución secuencial: %0.5f microsegundos \n", fabs(tiempoSerial));
+    printf("Tiempo ejecución paralelizado: %0.5f microsegundos \n\n", fabs(tiempoPar));
+    printf("Tiempo ejecución secuencial suma: %0.5f microsegundos \n", fabs(tiempoSerialSuma));
+    printf("Tiempo ejecución paralelizado suma: %0.5f microsegundos \n\n", fabs(tiempoParSuma));
     printf("Resultados totales del vector secuencial:\n");
     imprimirRangos(totalRangosSerial);
     printf("Resultados totales del vector paralelo:\n");
     imprimirRangos(totalRangosParalelo);
-    compararVectores(vectorSerialSalidaIntervalo, vectorParaleloSalidaIntervalo);
+    compararVectores(vectorSerialSalidaIntervalo, vectorParaleloSalidaIntervalo, n);
 }
 
-void imprimirVector(int *vector) {
-    for (int i=0; i<VALORES; i++) {
+void imprimirVector(int *vector, int n) {
+    for (int i=0; i<n; i++) {
         printf("Posición %d(%c) ", i, vector[i]);
     }
     printf("\n\n");
@@ -167,10 +167,9 @@ void imprimirRangos(int *vector) {
     printf("Hay un total de %d mayores \n\n", vector[3]);
 }
 
-void compararVectores(int *vector1, int *vector2) {
+void compararVectores(int *vector1, int *vector2, int n) {
     int orden = 0;
-    int edades = 90000;
-    for (int i=0; i<edades; i++)
+    for (int i=0; i<n; i++)
         if (vector1[i] != vector2[i])
             orden = 1;
     if (orden == 1)
